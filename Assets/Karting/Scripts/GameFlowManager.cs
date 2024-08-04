@@ -48,23 +48,34 @@ public class GameFlowManager : MonoBehaviour
     string m_SceneToLoad;
     float elapsedTimeBeforeEndScene = 0;
 
-    void Start()
+    private WaitForSeconds _waitForASecond = new WaitForSeconds(1f);
+    IEnumerator Start()
     {
         if (autoFindKarts)
         {
-            karts = FindObjectsOfType<ArcadeKart>();
-            if (karts.Length > 0)
+            while (karts == null || karts.Length<=0)
             {
-                if (!playerKart) playerKart = karts[0];
+                karts = FindObjectsOfType<ArcadeKart>();
+                if (karts.Length > 0)
+                {
+                    if (!playerKart) playerKart = karts[0];
+                }
+
+                yield return _waitForASecond;
             }
-            DebugUtility.HandleErrorIfNullFindObject<ArcadeKart, GameFlowManager>(playerKart, this);
+
+            //DebugUtility.HandleErrorIfNullFindObject<ArcadeKart, GameFlowManager>(playerKart, this);
         }
 
-        m_ObjectiveManager = FindObjectOfType<ObjectiveManager>();
-		DebugUtility.HandleErrorIfNullFindObject<ObjectiveManager, GameFlowManager>(m_ObjectiveManager, this);
+        while (m_ObjectiveManager == null || m_TimeManager == null)
+        {
+            m_ObjectiveManager = FindObjectOfType<ObjectiveManager>();
+            m_TimeManager = FindObjectOfType<TimeManager>();
+            yield return _waitForASecond;
+            //DebugUtility.HandleErrorIfNullFindObject<ObjectiveManager, GameFlowManager>(m_ObjectiveManager, this);
+            //DebugUtility.HandleErrorIfNullFindObject<TimeManager, GameFlowManager>(m_TimeManager, this);
+        }
 
-        m_TimeManager = FindObjectOfType<TimeManager>();
-        DebugUtility.HandleErrorIfNullFindObject<TimeManager, GameFlowManager>(m_TimeManager, this);
 
         AudioUtility.SetMasterVolume(1);
 
@@ -116,6 +127,9 @@ public class GameFlowManager : MonoBehaviour
     void Update()
     {
 
+        if (karts?.Length <= 0) return;
+        if (!m_TimeManager || !m_ObjectiveManager) return;
+        
         if (gameState != GameState.Play)
         {
             elapsedTimeBeforeEndScene += Time.deltaTime;
